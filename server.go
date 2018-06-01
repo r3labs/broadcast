@@ -41,6 +41,13 @@ func (s *Server) Close() {
 	}
 }
 
+// GetStream returns a stream by id
+func (s *Server) GetStream(id string) *Stream {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.Streams[id]
+}
+
 // CreateStream will create a new stream and register it
 func (s *Server) CreateStream(id string) *Stream {
 	str := newStream(s.BufferSize)
@@ -88,8 +95,10 @@ func (s *Server) Publish(id string, data []byte) {
 	}
 }
 
-func (s *Server) getStream(id string) *Stream {
+// Register a subscriber
+func (s *Server) Register(id string, sub *Subscriber) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.Streams[id]
+
+	s.Streams[id].addSubscriber(sub)
 }

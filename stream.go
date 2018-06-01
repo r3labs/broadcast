@@ -84,16 +84,10 @@ func (str *Stream) getSubIndex(sub *Subscriber) int {
 	return -1
 }
 
-// addSubscriber will create a new subscriber on a stream
-func (str *Stream) addSubscriber(eventid string) *Subscriber {
-	sub := &Subscriber{
-		eventid:    eventid,
-		quit:       str.deregister,
-		connection: make(chan *Event, 64),
-	}
-
+// addSubscriber will register a subscriber on a stream
+func (str *Stream) addSubscriber(sub *Subscriber) {
+	sub.quit = str.deregister
 	str.register <- sub
-	return sub
 }
 
 func (str *Stream) removeSubscriber(i int) {

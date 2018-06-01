@@ -11,6 +11,14 @@ type Subscriber struct {
 	connection chan *Event
 }
 
+// NewSubscriber creates a new subscriber with defaults
+func NewSubscriber() *Subscriber {
+	return &Subscriber{
+		eventid:    "0",
+		connection: make(chan *Event, 64),
+	}
+}
+
 // Close will let the stream know that the clients connection has terminated
 func (s *Subscriber) close() {
 	s.quit <- s
