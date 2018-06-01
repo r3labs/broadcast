@@ -6,14 +6,16 @@ package broadcast
 
 // Subscriber ...
 type Subscriber struct {
+	id         string
 	eventid    string
 	quit       chan *Subscriber
 	connection chan *Event
 }
 
 // NewSubscriber creates a new subscriber with defaults
-func NewSubscriber() *Subscriber {
+func NewSubscriber(id string) *Subscriber {
 	return &Subscriber{
+		id:         id,
 		eventid:    "0",
 		connection: make(chan *Event, 64),
 	}

@@ -49,7 +49,7 @@ func (str *Stream) run() {
 
 			// Remove closed subscriber
 			case subscriber := <-str.deregister:
-				i := str.getSubIndex(subscriber)
+				i := str.getSubscriberIndex(subscriber)
 				if i != -1 {
 					str.removeSubscriber(i)
 				}
@@ -75,9 +75,19 @@ func (str *Stream) close() {
 	str.quit <- true
 }
 
-func (str *Stream) getSubIndex(sub *Subscriber) int {
+func (str *Stream) getSubscriber(id string) *Subscriber {
 	for i := range str.subscribers {
-		if str.subscribers[i] == sub {
+		if str.subscribers[i].id == id {
+			return str.subscribers[i]
+		}
+	}
+
+	return nil
+}
+
+func (str *Stream) getSubscriberIndex(sub *Subscriber) int {
+	for i := range str.subscribers {
+		if str.subscribers[i].id == sub.id {
 			return i
 		}
 	}

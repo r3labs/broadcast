@@ -102,3 +102,18 @@ func (s *Server) Register(id string, sub *Subscriber) {
 
 	s.Streams[id].addSubscriber(sub)
 }
+
+// GetSubscriber will get an existing subscriber
+func (s *Server) GetSubscriber(id string) *Subscriber {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, stream := range s.Streams {
+		sub := stream.getSubscriber(id)
+		if sub != nil {
+			return sub
+		}
+	}
+
+	return nil
+}
