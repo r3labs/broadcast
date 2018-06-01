@@ -58,7 +58,7 @@ func (str *Stream) run() {
 			case event := <-str.event:
 				str.Eventlog.Add(event)
 				for i := range str.subscribers {
-					str.subscribers[i].connection <- event
+					str.subscribers[i].Broadcast(event)
 				}
 
 			// Shutdown if the server closes
@@ -101,13 +101,13 @@ func (str *Stream) addSubscriber(sub *Subscriber) {
 }
 
 func (str *Stream) removeSubscriber(i int) {
-	close(str.subscribers[i].connection)
+	str.subscribers[i].DisconnectAll()
 	str.subscribers = append(str.subscribers[:i], str.subscribers[i+1:]...)
 }
 
 func (str *Stream) removeAllSubscribers() {
 	for i := 0; i < len(str.subscribers); i++ {
-		close(str.subscribers[i].connection)
+		str.subscribers[i].DisconnectAll()
 	}
 	str.subscribers = str.subscribers[:0]
 }
