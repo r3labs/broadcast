@@ -4,7 +4,9 @@
 
 package broadcast
 
-import "sync"
+import (
+	"sync"
+)
 
 // Subscriber ...
 type Subscriber struct {
@@ -27,7 +29,7 @@ func NewSubscriber(id string) *Subscriber {
 // Broadcast an event to all of a subscribers connections
 func (s *Subscriber) Broadcast(e *Event) {
 	s.mu.Lock()
-	defer s.mu.Lock()
+	defer s.mu.Unlock()
 
 	for i := range s.connections {
 		s.connections[i] <- e
@@ -37,7 +39,7 @@ func (s *Subscriber) Broadcast(e *Event) {
 // Connect creates a new connection channel on a subscriber
 func (s *Subscriber) Connect() chan *Event {
 	s.mu.Lock()
-	defer s.mu.Lock()
+	defer s.mu.Unlock()
 
 	c := make(chan *Event, 64)
 	s.connections = append(s.connections, c)
@@ -46,7 +48,10 @@ func (s *Subscriber) Connect() chan *Event {
 
 // Disconnect a subscriber connection from the subscriber
 func (s *Subscriber) Disconnect(c chan *Event) {
-	for i := range s.connections {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for i := len(s.connections) - 1; i >= 0; i-- {
 		if s.connections[i] == c {
 			close(c)
 			s.connections = append(s.connections[:i], s.connections[i+1:]...)
@@ -60,11 +65,14 @@ func (s *Subscriber) Disconnect(c chan *Event) {
 
 // DisconnectAll closes all subscriber connections
 func (s *Subscriber) DisconnectAll() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	for i := range s.connections {
 		close(s.connections[i])
-		s.connections = append(s.connections[:i], s.connections[i+1:]...)
 	}
-	s.Close()
+
+	s.connections = s.connections[:0]
 }
 
 // Close will let the stream know that the clients connection has terminated

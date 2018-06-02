@@ -25,7 +25,7 @@ type StreamRegistration struct {
 
 // newStream returns a new stream
 func newStream(bufsize int) *Stream {
-	return &Stream{
+	s := &Stream{
 		AutoReplay:  true,
 		Eventlog:    make(EventLog, 0),
 		subscribers: make([]*Subscriber, 0),
@@ -34,6 +34,10 @@ func newStream(bufsize int) *Stream {
 		event:       make(chan *Event, bufsize),
 		quit:        make(chan bool),
 	}
+
+	s.run()
+
+	return s
 }
 
 func (str *Stream) run() {
@@ -65,6 +69,10 @@ func (str *Stream) run() {
 			case <-str.quit:
 				// remove connections
 				str.removeAllSubscribers()
+				close(str.event)
+				close(str.register)
+				close(str.deregister)
+				close(str.quit)
 				return
 			}
 		}
@@ -106,8 +114,9 @@ func (str *Stream) removeSubscriber(i int) {
 }
 
 func (str *Stream) removeAllSubscribers() {
-	for i := 0; i < len(str.subscribers); i++ {
+	for i := range str.subscribers {
 		str.subscribers[i].DisconnectAll()
 	}
+
 	str.subscribers = str.subscribers[:0]
 }
