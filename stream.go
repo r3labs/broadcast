@@ -13,6 +13,7 @@ type Stream struct {
 	subscribers []*Subscriber
 	register    chan *Subscriber
 	deregister  chan *Subscriber
+	replay      chan *Connection
 	event       chan *Event
 	quit        chan bool
 }
@@ -31,6 +32,7 @@ func newStream(bufsize int) *Stream {
 		subscribers: make([]*Subscriber, 0),
 		register:    make(chan *Subscriber),
 		deregister:  make(chan *Subscriber),
+		replay:      make(chan *Connection),
 		event:       make(chan *Event, bufsize),
 		quit:        make(chan bool),
 	}
@@ -46,10 +48,10 @@ func (str *Stream) run() {
 			select {
 			// Add new subscriber
 			case subscriber := <-str.register:
-				str.subscribers = append(str.subscribers, subscriber)
 				if str.AutoReplay {
-					str.Eventlog.Replay(subscriber)
+					subscriber.replay = str.replay
 				}
+				str.subscribers = append(str.subscribers, subscriber)
 
 			// Remove closed subscriber
 			case subscriber := <-str.deregister:
@@ -65,14 +67,14 @@ func (str *Stream) run() {
 					str.subscribers[i].Broadcast(event)
 				}
 
+			case conn := <-str.replay:
+				str.Eventlog.Replay(conn)
+
 			// Shutdown if the server closes
 			case <-str.quit:
 				// remove connections
 				str.removeAllSubscribers()
-				close(str.event)
-				close(str.register)
-				close(str.deregister)
-				close(str.quit)
+				str.cleanup()
 				return
 			}
 		}
@@ -81,6 +83,13 @@ func (str *Stream) run() {
 
 func (str *Stream) close() {
 	str.quit <- true
+}
+
+func (str *Stream) cleanup() {
+	close(str.event)
+	close(str.register)
+	close(str.deregister)
+	close(str.quit)
 }
 
 func (str *Stream) getSubscriber(id string) *Subscriber {
