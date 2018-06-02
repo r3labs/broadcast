@@ -51,7 +51,6 @@ func (s *Server) GetStream(id string) *Stream {
 // CreateStream will create a new stream and register it
 func (s *Server) CreateStream(id string) *Stream {
 	str := newStream(s.BufferSize)
-	str.run()
 
 	// Register new stream
 	s.mu.Lock()
