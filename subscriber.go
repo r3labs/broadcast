@@ -69,5 +69,7 @@ func (s *Subscriber) DisconnectAll() {
 
 // Close will let the stream know that the clients connection has terminated
 func (s *Subscriber) Close() {
-	s.quit <- s
+	if s.quit != nil {
+		s.quit <- s
+	}
 }
