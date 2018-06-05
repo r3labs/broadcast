@@ -4,6 +4,10 @@
 
 package broadcast
 
+import (
+	"strconv"
+)
+
 // EventLog holds all of previous events
 type EventLog []*Event
 
@@ -19,12 +23,12 @@ func (e *EventLog) Clear() {
 }
 
 // Replay events to a subscriber
-func (e *EventLog) Replay(s *Subscriber) {
+func (e *EventLog) Replay(c *Connection) {
 	for i := 0; i < len((*e)); i++ {
-		if string((*e)[i].ID) >= s.eventid {
-			for x := range s.connections {
-				s.connections[x] <- (*e)[i]
-			}
+		evid, _ := strconv.Atoi(c.eventid)
+
+		if (*e)[i].ID >= evid {
+			c.Send((*e)[i])
 		}
 	}
 }
