@@ -114,6 +114,7 @@ func (str *Stream) getSubscriberIndex(sub *Subscriber) int {
 // addSubscriber will register a subscriber on a stream
 func (str *Stream) addSubscriber(sub *Subscriber) {
 	sub.quit = str.deregister
+	sub.replay = str.replay
 	str.register <- sub
 }
 

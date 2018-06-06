@@ -50,8 +50,6 @@ func (s *Server) GetStream(id string) *Stream {
 
 // CreateStream will create a new stream and register it
 func (s *Server) CreateStream(id string) *Stream {
-	str := newStream(s.BufferSize)
-
 	// Register new stream
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -60,9 +58,9 @@ func (s *Server) CreateStream(id string) *Stream {
 		return s.Streams[id]
 	}
 
-	s.Streams[id] = str
+	s.Streams[id] = newStream(s.BufferSize)
 
-	return str
+	return s.Streams[id]
 }
 
 // RemoveStream will remove a stream

@@ -5,6 +5,7 @@
 package broadcast
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
@@ -130,5 +131,22 @@ func TestStreamExistingSubscriberConnect(t *testing.T) {
 		case <-time.After(time.Second):
 			t.Fail()
 		}
+	}
+}
+
+func TestStreamReplay(t *testing.T) {
+	s := newStream(DefaultBufferSize)
+
+	for i := 0; i < 10; i++ {
+		s.event <- &Event{Data: []byte(strconv.Itoa(i))}
+	}
+
+	sub := NewSubscriber("test")
+	s.addSubscriber(sub)
+	c := sub.Connect()
+
+	for i := 0; i < 10; i++ {
+		e := <-c
+		assert.Equal(t, string(e.Data), strconv.Itoa(i))
 	}
 }
