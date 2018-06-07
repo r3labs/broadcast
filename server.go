@@ -6,10 +6,15 @@ package broadcast
 
 import (
 	"sync"
+	"time"
 )
 
-// DefaultBufferSize size of the queue that holds the streams messages.
-const DefaultBufferSize = 1024
+const (
+	// DefaultBufferSize size of the queue that holds the streams messages.
+	DefaultBufferSize = 1024
+	// DefaultMaxInactivity of a stream
+	DefaultMaxInactivity = time.Second * 5
+)
 
 // Server Is our main struct
 type Server struct {

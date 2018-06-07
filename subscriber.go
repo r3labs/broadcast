@@ -70,10 +70,6 @@ func (s *Subscriber) Disconnect(c chan *Event) {
 			s.connections = append(s.connections[:i], s.connections[i+1:]...)
 		}
 	}
-
-	if len(s.connections) == 0 {
-		s.Close()
-	}
 }
 
 // DisconnectAll closes all subscriber connections
@@ -87,6 +83,11 @@ func (s *Subscriber) DisconnectAll() {
 		}
 		s.connections = append(s.connections[:i], s.connections[i+1:]...)
 	}
+}
+
+// HasConnections returns true if there are any subscriber connections
+func (s *Subscriber) HasConnections() bool {
+	return len(s.connections) > 0
 }
 
 // Close will let the stream know that the clients connection has terminated

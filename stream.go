@@ -4,18 +4,24 @@
 
 package broadcast
 
+import (
+	"time"
+)
+
 // Stream ...
 type Stream struct {
 	// Enables replaying of eventlog to newly added subscribers
-	AutoReplay  bool
-	Eventlog    EventLog
-	stats       chan chan int
-	subscribers []*Subscriber
-	register    chan *Subscriber
-	deregister  chan *Subscriber
-	replay      chan *Connection
-	event       chan *Event
-	quit        chan bool
+	AutoReplay    bool
+	log           EventLog
+	MaxInactivity time.Duration
+	stats         chan chan int
+	subscribers   []*Subscriber
+	register      chan *Subscriber
+	deregister    chan *Subscriber
+	replay        chan *Connection
+	event         chan *Event
+	quit          chan bool
+	closed        bool
 }
 
 // StreamRegistration ...
@@ -27,14 +33,15 @@ type StreamRegistration struct {
 // newStream returns a new stream
 func newStream(bufsize int) *Stream {
 	s := &Stream{
-		AutoReplay:  true,
-		Eventlog:    make(EventLog, 0),
-		subscribers: make([]*Subscriber, 0),
-		register:    make(chan *Subscriber),
-		deregister:  make(chan *Subscriber),
-		replay:      make(chan *Connection),
-		event:       make(chan *Event, bufsize),
-		quit:        make(chan bool),
+		AutoReplay:    true,
+		MaxInactivity: DefaultMaxInactivity,
+		log:           make(EventLog, 0),
+		subscribers:   make([]*Subscriber, 0),
+		register:      make(chan *Subscriber),
+		deregister:    make(chan *Subscriber),
+		replay:        make(chan *Connection),
+		event:         make(chan *Event, bufsize),
+		quit:          make(chan bool),
 	}
 
 	s.run()
@@ -62,13 +69,21 @@ func (str *Stream) run() {
 
 			// Publish event to subscribers
 			case event := <-str.event:
-				str.Eventlog.Add(event)
+				str.log.Add(event)
 				for i := range str.subscribers {
 					str.subscribers[i].Broadcast(event)
 				}
 
+			// Replay events to new connections
 			case conn := <-str.replay:
-				str.Eventlog.Replay(conn)
+				str.log.Replay(conn)
+
+			// Kill stream if there are no users and no activity on the stream
+			case <-time.After(str.MaxInactivity):
+				if !str.hasActiveSubscribers() {
+					str.cleanup()
+					return
+				}
 
 			// Shutdown if the server closes
 			case <-str.quit:
@@ -90,6 +105,7 @@ func (str *Stream) cleanup() {
 	close(str.register)
 	close(str.deregister)
 	close(str.quit)
+	str.closed = true
 }
 
 func (str *Stream) getSubscriber(id string) *Subscriber {
@@ -129,4 +145,13 @@ func (str *Stream) removeAllSubscribers() {
 	}
 
 	str.subscribers = str.subscribers[:0]
+}
+
+func (str *Stream) hasActiveSubscribers() bool {
+	for i := range str.subscribers {
+		if str.subscribers[i].HasConnections() {
+			return true
+		}
+	}
+	return false
 }

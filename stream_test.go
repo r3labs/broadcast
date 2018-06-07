@@ -14,6 +14,7 @@ import (
 
 func TestStreamRegisterSubscriber(t *testing.T) {
 	s := newStream(DefaultBufferSize)
+	defer s.close()
 
 	sub := NewSubscriber("test")
 	s.addSubscriber(sub)
@@ -23,6 +24,7 @@ func TestStreamRegisterSubscriber(t *testing.T) {
 
 func TestStreamDeregisterSubscriber(t *testing.T) {
 	s := newStream(DefaultBufferSize)
+	defer s.close()
 
 	sub := NewSubscriber("test")
 	s.addSubscriber(sub)
@@ -34,6 +36,7 @@ func TestStreamDeregisterSubscriber(t *testing.T) {
 
 func TestStreamPublish(t *testing.T) {
 	s := newStream(DefaultBufferSize)
+	defer s.close()
 
 	sub1 := NewSubscriber("test-1")
 	sub2 := NewSubscriber("test-2")
@@ -90,6 +93,7 @@ func TestStreamClose(t *testing.T) {
 
 func TestStreamNewSubscriberConnect(t *testing.T) {
 	s := newStream(DefaultBufferSize)
+	defer s.close()
 
 	sub := NewSubscriber("test")
 	s.addSubscriber(sub)
@@ -108,6 +112,7 @@ func TestStreamNewSubscriberConnect(t *testing.T) {
 
 func TestStreamExistingSubscriberConnect(t *testing.T) {
 	s := newStream(DefaultBufferSize)
+	defer s.close()
 
 	esub := NewSubscriber("test")
 	s.addSubscriber(esub)
@@ -136,6 +141,7 @@ func TestStreamExistingSubscriberConnect(t *testing.T) {
 
 func TestStreamReplay(t *testing.T) {
 	s := newStream(DefaultBufferSize)
+	defer s.close()
 
 	for i := 0; i < 10; i++ {
 		s.event <- &Event{Data: []byte(strconv.Itoa(i))}
@@ -149,4 +155,29 @@ func TestStreamReplay(t *testing.T) {
 		e := <-c
 		assert.Equal(t, string(e.Data), strconv.Itoa(i))
 	}
+}
+
+func TestStreamInactivity(t *testing.T) {
+	s := newStream(DefaultBufferSize)
+
+	s.MaxInactivity = time.Second
+
+	for i := 0; i < 10; i++ {
+		s.event <- &Event{Data: []byte(strconv.Itoa(i))}
+	}
+
+	sub := NewSubscriber("test")
+	s.addSubscriber(sub)
+	c := sub.Connect()
+
+	for i := 0; i < 10; i++ {
+		e := <-c
+		assert.Equal(t, string(e.Data), strconv.Itoa(i))
+	}
+
+	sub.DisconnectAll()
+
+	time.Sleep(time.Second * 2)
+
+	assert.True(t, s.closed)
 }
