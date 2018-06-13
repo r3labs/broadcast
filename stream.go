@@ -69,7 +69,9 @@ func (str *Stream) run() {
 
 			// Publish event to subscribers
 			case event := <-str.event:
-				str.log.Add(event)
+				if str.AutoReplay {
+					str.log.Add(event)
+				}
 				for i := range str.subscribers {
 					str.subscribers[i].Broadcast(event)
 				}
