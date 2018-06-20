@@ -119,3 +119,15 @@ func (s *Server) GetSubscriber(id string) *Subscriber {
 
 	return nil
 }
+
+// GetStreamSubscriber will get an existing stream subscriber
+func (s *Server) GetStreamSubscriber(stream, id string) *Subscriber {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.Streams[stream] == nil {
+		return nil
+	}
+
+	return s.Streams[stream].getSubscriber(id)
+}
