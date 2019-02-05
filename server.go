@@ -13,7 +13,7 @@ const (
 	// DefaultBufferSize size of the queue that holds the streams messages.
 	DefaultBufferSize = 1024
 	// DefaultMaxInactivity of a stream
-	DefaultMaxInactivity = time.Second * 5
+	DefaultMaxInactivity = time.Second * 60
 )
 
 // Server Is our main struct

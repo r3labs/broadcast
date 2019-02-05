@@ -99,6 +99,9 @@ func (str *Stream) run() {
 }
 
 func (str *Stream) close() {
+	if str.closed {
+		return
+	}
 	str.quit <- true
 }
 
